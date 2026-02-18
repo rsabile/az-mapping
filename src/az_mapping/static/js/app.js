@@ -1037,7 +1037,7 @@ function renderTable(data) {
         nameCell.appendChild(nameSpan);
         // Inject subscription age badge if available
         const ageData = subscriptionAgeCache.get(sub.subscriptionId);
-        if (ageData && ageData.source !== "unknown") {
+        if (ageData) {
             nameCell.appendChild(buildAgeBadge(ageData));
         }
 
@@ -1223,13 +1223,20 @@ async function fetchSubscriptionAges(subscriptionIds) {
                 `/api/subscription-info?subscriptionId=${encodeURIComponent(id)}${tenantQS()}`
             );
             subscriptionAgeCache.set(id, data);
-        } catch { /* ignore individual failures */ }
+        } catch (err) {
+            console.warn(`Failed to fetch subscription age for ${id}:`, err);
+        }
     }));
 }
 
 function buildAgeBadge(data) {
     const badge = document.createElement("span");
     badge.className = "age-inline";
+    if (data.source === "unknown") {
+        badge.innerHTML = '📅 <span class="age-days">unknown</span>' +
+            ' <span class="age-source-unknown" title="Could not determine creation date" style="display:inline-block;padding:0 0.3rem;border-radius:3px;font-size:0.68rem;font-weight:600;vertical-align:middle;">?</span>';
+        return badge;
+    }
     const dateStr = data.createdDate ? data.createdDate.split("T")[0] : "";
     const ageDays = data.ageDays;
     let ageLabel = "";

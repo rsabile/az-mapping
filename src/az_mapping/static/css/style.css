@@ -872,6 +872,10 @@ body {
     background: var(--warning);
     color: #323130;
 }
+.age-source-unknown {
+    background: var(--muted);
+    color: #fff;
+}
 
 .secondary-btn {
     display: inline-flex;
