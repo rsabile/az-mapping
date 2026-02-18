@@ -1,0 +1,24 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-oldest",
+      "name": "rg-oldest",
+      "type": "Microsoft.Resources/resourceGroups",
+      "location": "eastus",
+      "properties": {
+        "provisioningState": "Succeeded",
+        "createdTime": "2023-01-10T08:00:00.000000Z"
+      }
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-newer",
+      "name": "rg-newer",
+      "type": "Microsoft.Resources/resourceGroups",
+      "location": "westeurope",
+      "properties": {
+        "provisioningState": "Succeeded",
+        "createdTime": "2024-06-20T14:00:00.000000Z"
+      }
+    }
+  ]
+}

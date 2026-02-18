@@ -310,6 +310,21 @@ async def get_sku_pricing(
         return JSONResponse({"error": str(exc)}, status_code=500)
 
 
+@app.get("/api/subscription-info", tags=["Discovery"], summary="Get subscription creation date")
+async def get_subscription_info(
+    subscriptionId: str = Query(  # noqa: N803
+        ..., description="Subscription ID to look up."
+    ),
+    tenantId: str | None = Query(None, description="Optional tenant ID."),  # noqa: N803
+) -> JSONResponse:
+    """Return the creation date and age of an Azure subscription."""
+    try:
+        return JSONResponse(azure_api.get_subscription_info(subscriptionId, tenantId))
+    except Exception as exc:
+        logger.exception("Failed to get subscription info")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
 if __name__ == "__main__":
     from az_mapping.cli import cli
 

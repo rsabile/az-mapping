@@ -15,6 +15,7 @@ let lastSkuData = null;          // cached SKU data
 let skuSortColumn = null;        // current SKU table sort column
 let skuSortAsc = true;           // sort direction
 let lastSpotScores = null;       // cached spot placement scores {scores: {sku: score}, errors: []}
+let lastSubscriptionAge = null;  // cached subscription age info
 
 // ---------------------------------------------------------------------------
 // Deployment Confidence Score – client-side recomputation
@@ -568,11 +569,13 @@ function onRegionChange() {
 function resetSkuSection() {
     lastSkuData = null;
     lastSpotScores = null;
+    lastSubscriptionAge = null;
     skuSortColumn = null;
     skuSortAsc = true;
     document.getElementById("sku-empty").style.display = "block";
     document.getElementById("sku-table-container").style.display = "none";
     document.getElementById("sku-loading").style.display = "none";
+    document.getElementById("subscription-age-banner").style.display = "none";
 }
 
 function updateLoadButton() {
@@ -1180,6 +1183,59 @@ function exportTableCSV() {
 }
 
 // ---------------------------------------------------------------------------
+// Subscription Age
+// ---------------------------------------------------------------------------
+async function fetchSubscriptionAge(subscriptionId) {
+    const banner = document.getElementById("subscription-age-banner");
+    // Skip if already fetched for this subscription
+    if (lastSubscriptionAge && lastSubscriptionAge.subscriptionId === subscriptionId) {
+        renderSubscriptionAgeBanner(lastSubscriptionAge);
+        return;
+    }
+    banner.style.display = "none";
+    try {
+        const data = await apiFetch(
+            `/api/subscription-info?subscriptionId=${encodeURIComponent(subscriptionId)}${tenantQS()}`
+        );
+        lastSubscriptionAge = data;
+        renderSubscriptionAgeBanner(data);
+    } catch {
+        banner.style.display = "none";
+    }
+}
+
+function renderSubscriptionAgeBanner(data) {
+    const banner = document.getElementById("subscription-age-banner");
+    if (!data || data.source === "unknown") {
+        banner.style.display = "none";
+        return;
+    }
+    const dateStr = data.createdDate ? data.createdDate.split("T")[0] : "—";
+    const ageDays = data.ageDays;
+    let ageLabel = "";
+    if (ageDays != null) {
+        if (ageDays >= 365) {
+            const years = Math.floor(ageDays / 365);
+            const months = Math.floor((ageDays % 365) / 30);
+            ageLabel = months > 0 ? `${years}y ${months}m` : `${years}y`;
+        } else if (ageDays >= 30) {
+            ageLabel = `${Math.floor(ageDays / 30)}m`;
+        } else {
+            ageLabel = `${ageDays}d`;
+        }
+    }
+    const sourceLabel = data.isEstimated
+        ? '<span class="age-source age-source-estimated" title="Estimated from oldest resource group">estimated</span>'
+        : '<span class="age-source age-source-exact" title="Exact date from Subscription Alias API">exact</span>';
+    banner.innerHTML =
+        `<span class="age-icon" title="Subscription age">📅</span> ` +
+        `Created: <strong>${escapeHtml(dateStr)}</strong>` +
+        (ageLabel ? ` <span class="age-days">(${escapeHtml(ageLabel)} ago)</span>` : "") +
+        ` ${sourceLabel}`;
+    banner.style.display = "block";
+}
+
+// ---------------------------------------------------------------------------
 // SKU Section
 // ---------------------------------------------------------------------------
 
@@ -1228,6 +1284,9 @@ async function loadSkus() {
     }
     
     const subscriptionName = getSubName(subscriptionId);
+    
+    // Fetch subscription age in parallel (non-blocking)
+    fetchSubscriptionAge(subscriptionId);
     
     // Disable button while loading
     if (loadBtn) loadBtn.disabled = true;

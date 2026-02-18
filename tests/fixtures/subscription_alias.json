@@ -1,0 +1,11 @@
+{
+  "id": "/providers/Microsoft.Subscription/subscriptions/00000000-0000-0000-0000-000000000001",
+  "name": "00000000-0000-0000-0000-000000000001",
+  "type": "Microsoft.Subscription/subscriptions",
+  "properties": {
+    "subscriptionId": "00000000-0000-0000-0000-000000000001",
+    "displayName": "Test Subscription",
+    "state": "Enabled",
+    "createdDate": "2022-03-15T10:30:00.000000Z"
+  }
+}
