@@ -272,22 +272,3 @@ def get_sku_pricing_detail(
         if profile is not None:
             result["profile"] = profile
     return json.dumps(result, indent=2)
-
-
-@mcp.tool()
-def get_subscription_info(
-    subscription_id: str,
-    tenant_id: str | None = None,
-) -> str:
-    """Get the creation date and age of an Azure subscription.
-
-    Tries the Subscription Alias API first (exact date), then falls back
-    to the oldest resource-group creation time (estimated date).  If both
-    strategies fail, ``source`` is ``"unknown"``.
-
-    Args:
-        subscription_id: The subscription ID to look up.
-        tenant_id: Optional tenant ID to scope the query.
-    """
-    result = azure_api.get_subscription_info(subscription_id, tenant_id)
-    return json.dumps(result, indent=2)

@@ -558,21 +558,10 @@ body {
 
 .mapping-table .sub-name-cell {
     font-weight: 500;
-    max-width: 380px;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.age-inline {
-    display: inline-block;
-    margin-left: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    vertical-align: middle;
-}
-.age-inline .age-days {
-    color: var(--text-muted);
-    font-size: 0.72rem;
 }
 
 /* ---- Consistency indicator ---- */
@@ -842,39 +831,6 @@ body {
     outline: none;
     border-color: var(--azure-blue);
     box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
-}
-
-.subscription-age-banner {
-    margin-bottom: 0.75rem;
-    padding: 0.45rem 0.75rem;
-    background: var(--azure-light);
-    border-radius: 6px;
-    font-size: 0.85rem;
-    color: var(--text);
-}
-.subscription-age-banner .age-days {
-    color: var(--text-muted);
-}
-.subscription-age-banner .age-source {
-    display: inline-block;
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    font-size: 0.72rem;
-    font-weight: 500;
-    margin-left: 0.3rem;
-    vertical-align: middle;
-}
-.age-source-exact {
-    background: var(--success);
-    color: #fff;
-}
-.age-source-estimated {
-    background: var(--warning);
-    color: #323130;
-}
-.age-source-unknown {
-    background: var(--muted);
-    color: #fff;
 }
 
 .secondary-btn {

@@ -65,13 +65,3 @@ def _clear_sku_profile_cache():
     _sku_profile_cache.clear()
     yield
     _sku_profile_cache.clear()
-
-
-@pytest.fixture(autouse=True)
-def _clear_subscription_age_cache():
-    """Clear the subscription age cache between tests."""
-    from az_mapping.azure_api import _subscription_age_cache
-
-    _subscription_age_cache.clear()
-    yield
-    _subscription_age_cache.clear()

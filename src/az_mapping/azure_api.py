@@ -917,13 +917,6 @@ def get_sku_profile(
 _DETAIL_PRICE_CACHE_TTL = 3600  # 1 hour
 _detail_price_cache: dict[str, tuple[float, dict]] = {}
 
-# ---------------------------------------------------------------------------
-# Subscription age cache
-# ---------------------------------------------------------------------------
-
-_SUBSCRIPTION_AGE_CACHE_TTL = 86400  # 24 hours
-_subscription_age_cache: dict[str, tuple[float, dict]] = {}
-
 
 def _fetch_all_retail_prices(
     region: str,
@@ -1077,42 +1070,3 @@ def get_sku_pricing_detail(
 
     _detail_price_cache[cache_key] = (time.monotonic(), result)
     return result
-
-
-# ---------------------------------------------------------------------------
-# Subscription creation date
-# ---------------------------------------------------------------------------
-
-
-def get_subscription_info(
-    subscription_id: str,
-    tenant_id: str | None = None,
-) -> dict:
-    """Return creation-date information for a single subscription.
-
-    Results are cached for ``_SUBSCRIPTION_AGE_CACHE_TTL`` seconds.
-    """
-    cache_key = f"sub_age:{subscription_id}:{tenant_id or ''}"
-    now = time.monotonic()
-    cached = _subscription_age_cache.get(cache_key)
-    if cached is not None:
-        ts, data = cached
-        if now - ts < _SUBSCRIPTION_AGE_CACHE_TTL:
-            return data
-
-    from az_mapping.services.subscription_age import get_subscription_creation_date
-
-    headers = _get_headers(tenant_id)
-    result = get_subscription_creation_date(
-        subscription_id=subscription_id,
-        headers=headers,
-    )
-    response: dict = {
-        "subscriptionId": subscription_id,
-        "createdDate": result["created_date"],
-        "source": result["source"],
-        "isEstimated": result["is_estimated"],
-        "ageDays": result["age_days"],
-    }
-    _subscription_age_cache[cache_key] = (time.monotonic(), response)
-    return response
