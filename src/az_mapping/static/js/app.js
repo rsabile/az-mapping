@@ -15,7 +15,7 @@ let lastSkuData = null;          // cached SKU data
 let skuSortColumn = null;        // current SKU table sort column
 let skuSortAsc = true;           // sort direction
 let lastSpotScores = null;       // cached spot placement scores {scores: {sku: score}, errors: []}
-let lastSubscriptionAge = null;  // cached subscription age info
+const subscriptionAgeCache = new Map();  // subscription ID → age info
 
 // ---------------------------------------------------------------------------
 // Deployment Confidence Score – client-side recomputation
@@ -569,7 +569,6 @@ function onRegionChange() {
 function resetSkuSection() {
     lastSkuData = null;
     lastSpotScores = null;
-    lastSubscriptionAge = null;
     skuSortColumn = null;
     skuSortAsc = true;
     document.getElementById("sku-empty").style.display = "block";
@@ -605,6 +604,10 @@ async function loadMappings() {
 
         document.getElementById("results-loading").style.display = "none";
         document.getElementById("results-content").style.display = "block";
+
+        // Fetch subscription ages in parallel, then render table with badges
+        const subIds = lastMappingData.map(d => d.subscriptionId);
+        fetchSubscriptionAges(subIds).then(() => renderTable(lastMappingData));
 
         renderGraph(lastMappingData);
         renderTable(lastMappingData);
@@ -1027,9 +1030,16 @@ function renderTable(data) {
     validData.forEach(sub => {
         const row = tbody.insertRow();
         const nameCell = row.insertCell();
-        nameCell.textContent = getSubName(sub.subscriptionId);
         nameCell.className = "sub-name-cell";
         nameCell.title = getSubName(sub.subscriptionId);
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = getSubName(sub.subscriptionId);
+        nameCell.appendChild(nameSpan);
+        // Inject subscription age badge if available
+        const ageData = subscriptionAgeCache.get(sub.subscriptionId);
+        if (ageData && ageData.source !== "unknown") {
+            nameCell.appendChild(buildAgeBadge(ageData));
+        }
 
         const idCell = row.insertCell();
         idCell.textContent = sub.subscriptionId;
@@ -1188,8 +1198,8 @@ function exportTableCSV() {
 async function fetchSubscriptionAge(subscriptionId) {
     const banner = document.getElementById("subscription-age-banner");
     // Skip if already fetched for this subscription
-    if (lastSubscriptionAge && lastSubscriptionAge.subscriptionId === subscriptionId) {
-        renderSubscriptionAgeBanner(lastSubscriptionAge);
+    if (subscriptionAgeCache.has(subscriptionId)) {
+        renderSubscriptionAgeBanner(subscriptionAgeCache.get(subscriptionId));
         return;
     }
     banner.style.display = "none";
@@ -1197,11 +1207,50 @@ async function fetchSubscriptionAge(subscriptionId) {
         const data = await apiFetch(
             `/api/subscription-info?subscriptionId=${encodeURIComponent(subscriptionId)}${tenantQS()}`
         );
-        lastSubscriptionAge = data;
+        subscriptionAgeCache.set(subscriptionId, data);
         renderSubscriptionAgeBanner(data);
     } catch {
         banner.style.display = "none";
     }
+}
+
+async function fetchSubscriptionAges(subscriptionIds) {
+    const toFetch = subscriptionIds.filter(id => !subscriptionAgeCache.has(id));
+    if (toFetch.length === 0) return;
+    await Promise.allSettled(toFetch.map(async (id) => {
+        try {
+            const data = await apiFetch(
+                `/api/subscription-info?subscriptionId=${encodeURIComponent(id)}${tenantQS()}`
+            );
+            subscriptionAgeCache.set(id, data);
+        } catch { /* ignore individual failures */ }
+    }));
+}
+
+function buildAgeBadge(data) {
+    const badge = document.createElement("span");
+    badge.className = "age-inline";
+    const dateStr = data.createdDate ? data.createdDate.split("T")[0] : "";
+    const ageDays = data.ageDays;
+    let ageLabel = "";
+    if (ageDays != null) {
+        if (ageDays >= 365) {
+            const years = Math.floor(ageDays / 365);
+            const months = Math.floor((ageDays % 365) / 30);
+            ageLabel = months > 0 ? `${years}y ${months}m` : `${years}y`;
+        } else if (ageDays >= 30) {
+            ageLabel = `${Math.floor(ageDays / 30)}m`;
+        } else {
+            ageLabel = `${ageDays}d`;
+        }
+    }
+    const srcClass = data.isEstimated ? "age-source-estimated" : "age-source-exact";
+    const srcTitle = data.isEstimated ? "Estimated from oldest resource group" : "Exact date from Alias API";
+    const srcLabel = data.isEstimated ? "≈" : "✓";
+    badge.innerHTML = `📅 ${escapeHtml(dateStr)}` +
+        (ageLabel ? ` <span class="age-days">(${escapeHtml(ageLabel)})</span>` : "") +
+        ` <span class="${srcClass}" title="${srcTitle}" style="display:inline-block;padding:0 0.3rem;border-radius:3px;font-size:0.68rem;font-weight:600;vertical-align:middle;">${srcLabel}</span>`;
+    return badge;
 }
 
 function renderSubscriptionAgeBanner(data) {

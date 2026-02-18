@@ -558,10 +558,21 @@ body {
 
 .mapping-table .sub-name-cell {
     font-weight: 500;
-    max-width: 260px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    max-width: 380px;
     white-space: nowrap;
+}
+
+.age-inline {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    vertical-align: middle;
+}
+.age-inline .age-days {
+    color: var(--text-muted);
+    font-size: 0.72rem;
 }
 
 /* ---- Consistency indicator ---- */
